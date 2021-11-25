@@ -6,13 +6,15 @@ authors = ["Nils Philippsen <nils@redhat.com>", "Vipul Siddharth <siddharthvipul
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.6.2"
+python = "^3.7"
 fastapi = "^0.70.0"
 SQLAlchemy = "^1.4.25"
 importlib-metadata = {version = "^4.8.1", python = "<3.8"}
 click = "^8.0.3"
 uvicorn = "^0.15.0"
 PyYAML = "^6.0"
+alembic = "^1.7.5"
+ipython = {version = "^7.29.0", optional = true}
 
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"
@@ -25,6 +27,10 @@ pytest-isort = "^2.0.0"
 tox = "^3.24.4"
 fastapi = {version = "^0.70.0", extras = ["test"]}
 flake8 = "^3.9.2"
+pytest-asyncio = "^0.16.0"
+
+[tool.poetry.extras]
+interactive = ["ipython"]
 
 [tool.pytest.ini_options]
 addopts = "--black --cov-config .coveragerc --cov=duffy --cov-report term --cov-report xml --cov-report html --flake8 --isort"
@@ -32,6 +38,7 @@ flake8-max-line-length = 100
 
 [tool.isort]
 line_length = 100
+profile = "black"
 
 [tool.black]
 line-length = 100
@@ -41,4 +48,4 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-duffy = "duffy.app.cli:main"
+duffy = "duffy.cli:cli"
