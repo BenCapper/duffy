@@ -1,24 +1,37 @@
+from html.parser import HTMLParser
+
 import pytest
 
+from duffy.app.main import app
 
+
+@pytest.mark.asyncio
 class TestMain:
+    api_paths = (
+        "/api/v1/chassis",
+        "/api/v1/nodes",
+        "/api/v1/projects",
+        "/api/v1/sessions",
+    )
 
-    endpoint_to_methodname = {
-        # legacy API
-        "/Node/get": "get_a_node",
-        "/Node/done": "node_is_done",
-        "/Node/fail": "node_failed",
-        "/Inventory": "get_node_inventory",
-        # versioned API
-        "/api/v1/node/get": "get_a_node",
-        "/api/v1/node/done": "node_is_done",
-        "/api/v1/node/fail": "node_failed",
-        "/api/v1/node": "get_node_inventory",
-    }
+    @pytest.mark.parametrize("path", api_paths)
+    def test_paths(self, path):
+        assert any(r.path == path for r in app.routes)
 
-    @pytest.mark.parametrize("endpoint", endpoint_to_methodname)
-    def test_endpoints(self, endpoint, client):
-        methodname = self.endpoint_to_methodname[endpoint]
-        response = client.get(endpoint)
-        assert response.status_code == 200
-        assert response.json() == {"name": methodname}
+    async def test_openapi_json(self, client):
+        response = await client.get("/openapi.json")
+        result = response.json()
+        assert isinstance(result["openapi"], str)
+        assert all(x in result["paths"] for x in self.api_paths)
+
+    async def test_swagger_docs(self, client):
+        """Test that Swagger UI docs render and can be parsed."""
+        response = await client.get("/docs")
+        parser = HTMLParser()
+        parser.feed(response.text)
+
+    async def test_redoc_docs(self, client):
+        """Test that ReDoc docs render and can be parsed."""
+        response = await client.get("/redoc")
+        parser = HTMLParser()
+        parser.feed(response.text)
