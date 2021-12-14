@@ -10,31 +10,31 @@ from starlette.status import HTTP_201_CREATED, HTTP_404_NOT_FOUND, HTTP_422_UNPR
 
 from ...api_models import SessionCreateModel, SessionResult, SessionResultCollection
 from ...database import DBSession
-from ...database.model import Project, Session
+from ...database.model import Session, Tenant
 
 router = APIRouter(prefix="/sessions")
 
 
 # http get http://localhost:8080/api/v1/sessions
-@router.get("", response_model=SessionResultCollection)
+@router.get("", response_model=SessionResultCollection, tags=["sessions"])
 async def get_all_sessions():
     """
     Returns all sessions
     """
-    query = select(Session).options(selectinload(Session.project))
+    query = select(Session).options(selectinload(Session.tenant))
     results = await DBSession.execute(query)
     return {"action": "get", "sessions": results.scalars().all()}
 
 
 # http get http://localhost:8080/api/v1/sessions/2
-@router.get("/{id}", response_model=SessionResult)
+@router.get("/{id}", response_model=SessionResult, tags=["sessions"])
 async def get_session(id: int):
     """
-    Returns a session with the specified ID
+    Returns a session with the specified **ID**
     """
     session = (
         await DBSession.execute(
-            select(Session).filter_by(id=id).options(selectinload(Session.project))
+            select(Session).filter_by(id=id).options(selectinload(Session.tenant))
         )
     ).scalar_one_or_none()
     if not session:
@@ -42,20 +42,20 @@ async def get_session(id: int):
     return {"action": "get", "session": session}
 
 
-# http --json post http://localhost:8080/api/v1/sessions project_id=2
-@router.post("", status_code=HTTP_201_CREATED, response_model=SessionResult)
+# http --json post http://localhost:8080/api/v1/sessions tenant_id=2
+@router.post("", status_code=HTTP_201_CREATED, response_model=SessionResult, tags=["sessions"])
 async def create_session(data: SessionCreateModel):
     """
-    Creates a session with the specified project ID
+    Creates a session with the specified **tenant ID**
     """
-    project = (
-        await DBSession.execute(select(Project).filter_by(id=data.project_id))
+    tenant = (
+        await DBSession.execute(select(Tenant).filter_by(id=data.tenant_id))
     ).scalar_one_or_none()
-    if not project:
+    if not tenant:
         raise HTTPException(
-            HTTP_422_UNPROCESSABLE_ENTITY, f"can't find project with id {data.project_id}"
+            HTTP_422_UNPROCESSABLE_ENTITY, f"can't find tenant with id {data.tenant_id}"
         )
-    session = Session(project=project)
+    session = Session(tenant=tenant)
     DBSession.add(session)
     try:
         await DBSession.commit()
@@ -65,14 +65,14 @@ async def create_session(data: SessionCreateModel):
 
 
 # http delete http://localhost:8080/api/v1/sessions/2
-@router.delete("/{id}", response_model=SessionResult)
+@router.delete("/{id}", response_model=SessionResult, tags=["sessions"])
 async def delete_session(id: int):
     """
-    Deletes the session with the specified ID
+    Deletes the session with the specified **ID**
     """
     session = (
         await DBSession.execute(
-            select(Session).filter_by(id=id).options(selectinload(Session.project))
+            select(Session).filter_by(id=id).options(selectinload(Session.tenant))
         )
     ).scalar_one_or_none()
     if not session:
